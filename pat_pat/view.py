@@ -17,7 +17,7 @@ class GameView:
         self.__load_pics()
         self.__load_players_names()
         self.__roles_pos = None
-        self.__attacks_move_pos = []
+        self.__attacks_move_data = []
         self.__one_round_min_time = 30
         self.__this_round_time = 0
         self.__round_fond = pygame.font.SysFont("simhei", 30)
@@ -125,7 +125,7 @@ class GameView:
             draw_attack_finished = self._draw_one_round_all_attack()
             if draw_attack_finished and self.__this_round_time > self.__one_round_min_time:
                 self.__this_round_time = 0
-                self.__attacks_move_pos.clear()
+                self.__attacks_move_data.clear()
                 return True
             else:
                 self.__this_round_time += 1
@@ -213,21 +213,40 @@ class GameView:
 
         move_speed = attack_move_vec / use_time
         move_pos = [tuple(roles_position[from_role_id][0] + i * move_speed) for i in range(use_time + 1)]
-        self.__attacks_move_pos.append((move_pos, attack_pics))
+        self.__attacks_move_data.append([(from_role_id, to_role_id), move_pos, attack_pics])
 
     def __add_one_round_all_attack(self, roles_position: list):
         actions = self.__game.get_now_action()
+        attack_part = []
         for player_id in range(len(actions)):
-            if actions[player_id] is not None:
-                if actions[player_id].action_type.value == ActionType.ATTACK.value:
+            action = actions[player_id]
+            if action is not None:
+                if action.action_type.value == ActionType.ATTACK.value:
                     for other in range(len(actions)):
                         if other != player_id and actions[other] is not None:
-                            self.__add_one_round_attack(self.__attack, actions[player_id].power, player_id, other,
+                            attack_part.append(((player_id, other), action.power))
+                            self.__add_one_round_attack(self.__attack, action.power, player_id, other,
                                                         roles_position, self.__one_round_min_time)
+        # 攻击抵消效果
+        for i in range(len(attack_part) - 1):
+            for j in range(i + 1, len(attack_part)):
+                if attack_part[i][0] == attack_part[j][0][::-1]:
+                    if attack_part[i][1] == attack_part[j][1]:
+                        for move_pos in self.__attacks_move_data:
+                            if move_pos[0] == attack_part[i][0] or move_pos[0] == attack_part[j][0]:
+                                move_pos[1] = move_pos[1][:len(move_pos[1]) // 2 + 1]
+                    elif attack_part[i][1] > attack_part[j][1]:
+                        for move_pos in self.__attacks_move_data:
+                            if move_pos[0] == attack_part[j][0]:
+                                move_pos[1] = move_pos[1][:len(move_pos[1]) // 2 + 1]
+                    else:
+                        for move_pos in self.__attacks_move_data:
+                            if move_pos[0] == attack_part[i][0]:
+                                move_pos[1] = move_pos[1][:len(move_pos[1]) // 2 + 1]
 
     def _draw_one_round_all_attack(self, frequency=1):
         is_finished = True
-        for move_pos, attack_pics in self.__attacks_move_pos:
+        for _, move_pos, attack_pics in self.__attacks_move_data:
             attack_pic = attack_pics[self.__attack_pos // frequency % len(attack_pics)]
             if len(move_pos) > 0:
                 pos = move_pos.pop(0)
