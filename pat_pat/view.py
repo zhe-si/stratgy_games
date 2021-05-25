@@ -57,11 +57,13 @@ class GameView:
 
         self.__defend_pos = 0
         tar_defend_h = int(tar_role_h * (3 / 5))
-        self.__defend = [pygame.image.load(defend).convert_alpha() for defend in self.__defend_pics[0]]
-        for pic_id in range(len(self.__defend)):
-            pic_size = self.__defend[pic_id].get_size()
-            self.__defend[pic_id] = pygame.transform.smoothscale(
-                self.__defend[pic_id], (int(pic_size[0] / pic_size[1] * tar_defend_h), tar_defend_h))
+        self.__defends = [[pygame.image.load(defend).convert_alpha() for defend in self.__defend_pics[i]]
+                          for i in range(len(self.__defend_pics))]
+        for defend_pic in self.__defends:
+            for pic_id in range(len(defend_pic)):
+                pic_size = defend_pic[pic_id].get_size()
+                defend_pic[pic_id] = pygame.transform.smoothscale(
+                    defend_pic[pic_id], (int(pic_size[0] / pic_size[1] * tar_defend_h), tar_defend_h))
 
         self.__make_power_pos = 0
         self.__make_power = [pygame.image.load(mp).convert_alpha() for mp in self.__make_power_pics[0]]
@@ -101,11 +103,7 @@ class GameView:
             [pic_p + "defend/d2.png"],
             [pic_p + "defend/d3.png"],
             [pic_p + "defend/d4.png"],
-            [pic_p + "defend/d5.png"],
-            [pic_p + "defend/d6.png"],
-            [pic_p + "defend/d7.png"],
-            [pic_p + "defend/d8.png"],
-            [pic_p + "defend/d9.png"]]
+            [pic_p + "defend/d5.png"]]
         self.__make_power_pics = [
             [pic_p + "make_power/p1.png", pic_p + "make_power/p2.png"],
             [pic_p + "make_power/p3.png", pic_p + "make_power/p5.png", pic_p + "make_power/p4.png"]]
@@ -247,9 +245,11 @@ class GameView:
     def _draw_all_defends(self, roles_position: list):
         actions = self.__game.get_now_action()
         for player_id in range(len(actions)):
-            if actions[player_id] is not None:
-                if actions[player_id].action_type.value == ActionType.DEFEND.value:
-                    self._draw_defend(player_id, self.__defend, roles_position)
+            action = actions[player_id]
+            if action is not None:
+                if action.action_type.value == ActionType.DEFEND.value:
+                    self._draw_defend(player_id,
+                                      self.__defends[4 if action.power > 4 else action.power], roles_position)
         self.__defend_pos += 1
 
     @staticmethod
