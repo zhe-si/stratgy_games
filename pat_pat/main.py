@@ -4,7 +4,7 @@ from pat_pat.view import View
 
 
 def main():
-    game = Game(TestUser(), TestUser(), TestUser(), TestUser(), TestUser(), TestUser())
+    game = Game(TestUser(), TestUser(), TestUser(), TestUser(), TestUser())
     view = View(game)
     while True:
         game.run_one_round()

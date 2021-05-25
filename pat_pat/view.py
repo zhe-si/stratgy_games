@@ -203,7 +203,12 @@ class GameView:
                                           roles_position[to_role_id][0][1] - roles_position[from_role_id][0][1]))
         attack_start_to_vec = pygame.Vector2(1, 0)
         turn_angle = attack_start_to_vec.angle_to(attack_move_vec)
-        attack_pics = [pygame.transform.rotate(attack_pic, -turn_angle) for attack_pic in attack_pics]
+        attack_pics = attack_pics.copy()
+        for pic_id in range(len(attack_pics)):
+            attack_pic_new_size = (attack_pics[pic_id].get_width() * attack_pic_size,
+                                   attack_pics[pic_id].get_height() * attack_pic_size)
+            attack_pics[pic_id] = pygame.transform.smoothscale(attack_pics[pic_id], attack_pic_new_size)
+            attack_pics[pic_id] = pygame.transform.rotate(attack_pics[pic_id], -turn_angle)
 
         attack_vec_len = attack_move_vec.length()
         attack_move_vec = attack_move_vec * ((attack_vec_len - attack_pics[0].get_width()) / attack_vec_len)
