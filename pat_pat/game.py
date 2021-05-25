@@ -1,6 +1,6 @@
 from exception import LogicException
 from pat_pat.user.interface import UserInterface
-from role import Role, ActionType
+from role import Role, ActionType, Action
 
 
 class Game:
@@ -27,7 +27,7 @@ class Game:
     def get_players_info(self):
         return [player[1].get_user_name() for player in self.__players]
 
-    def get_now_action(self):
+    def get_now_action(self) -> list[Action]:
         """action 若为None，表明该玩家以阵亡"""
         return self.__now_players_action.copy()
 

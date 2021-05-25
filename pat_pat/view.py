@@ -6,7 +6,6 @@ from pygame.surface import Surface
 
 from pat_pat.game import Game
 from pat_pat.role import ActionType
-from pat_pat.user.user_test import TestUser
 
 
 class GameView:
@@ -50,6 +49,11 @@ class GameView:
 
         self.__attack_pos = 0
         self.__attack = [pygame.image.load(attack).convert_alpha() for attack in self.__attack_pics[1]]
+        tar_attack_h = int(tar_role_h / 3)
+        for pic_id in range(len(self.__attack)):
+            pic_size = self.__attack[pic_id].get_size()
+            self.__attack[pic_id] = pygame.transform.smoothscale(
+                self.__attack[pic_id], (int(pic_size[0] / pic_size[1] * tar_attack_h), tar_attack_h))
 
         self.__defend_pos = 0
         tar_defend_h = int(tar_role_h * (3 / 5))
@@ -193,8 +197,8 @@ class GameView:
                     self._draw_make_power(player_id, self.__make_power, roles_position, frequency)
         self.__make_power_pos += 1
 
-    def __add_one_round_attack(self, attack_pics: list[Surface], from_role_id: int, to_role_id: int,
-                               roles_position: list, use_time: int):
+    def __add_one_round_attack(self, attack_pics: list[Surface], attack_pic_size: int,
+                               from_role_id: int, to_role_id: int, roles_position: list, use_time: int):
         attack_move_vec = pygame.Vector2((roles_position[to_role_id][0][0] - roles_position[from_role_id][0][0],
                                           roles_position[to_role_id][0][1] - roles_position[from_role_id][0][1]))
         attack_start_to_vec = pygame.Vector2(1, 0)
@@ -215,8 +219,8 @@ class GameView:
                 if actions[player_id].action_type.value == ActionType.ATTACK.value:
                     for other in range(len(actions)):
                         if other != player_id and actions[other] is not None:
-                            self.__add_one_round_attack(self.__attack, player_id, other, roles_position,
-                                                        self.__one_round_min_time)
+                            self.__add_one_round_attack(self.__attack, actions[player_id].power, player_id, other,
+                                                        roles_position, self.__one_round_min_time)
 
     def _draw_one_round_all_attack(self, frequency=1):
         is_finished = True
