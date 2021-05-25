@@ -10,6 +10,7 @@ class TestUser(UserInterface):
     def __init__(self):
         self.id = TestUser.user_id
         self.game_time = 0
+        self.now_power = 0
         TestUser.user_id += 1
 
     def decision(self, my_role: Role, enemies_role: list[Role]) -> Action:
@@ -19,11 +20,18 @@ class TestUser(UserInterface):
 
         choose = random.randint(0, 5)
         if choose == 0:
-            return Action(ActionType.ATTACK, 1)
+            if self.now_power == 0:
+                self.now_power += 1
+                return Action(ActionType.MAKE_POWER, 1)
+            else:
+                power = random.randint(1, self.now_power)
+                self.now_power -= power
+                return Action(ActionType.ATTACK, power)
         elif choose == 1:
             return Action(ActionType.DEFEND, 0)
         else:
+            self.now_power += 1
             return Action(ActionType.MAKE_POWER, 1)
 
     def get_user_name(self) -> str:
-        return "test user {}".format(self.id)
+        return "TestUser {}".format(self.id)
