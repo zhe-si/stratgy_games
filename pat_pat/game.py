@@ -11,10 +11,15 @@ class Game:
         self.__now_players_action = []
         self.__are_players_survival = [True for _ in range(len(self.__players))]
         self.__winner_info = None
+        self.__round_num = 0
 
     def run_one_round(self):
+        self.__round_num += 1
         has_attack, max_attack_power = self.__run_all_decisions()
         self.__judge_actions_result(has_attack, max_attack_power)
+
+    def get_game_round(self):
+        return self.__round_num
 
     def get_players_num(self):
         return len(self.__players)
@@ -70,8 +75,12 @@ class Game:
                 first_survival_id = player_id
         if survival_num == 1:
             self.__winner_info = (first_survival_id, self.__players[first_survival_id][1].get_user_name())
+            print("Congratulations!!!\nplayer '{}' win the game".format(
+                self.__players[first_survival_id][1].get_user_name()))
         elif survival_num < 1:
-            raise LogicException("survival players num is less than 1")
+            # 可能会同时爆气而亡
+            self.__winner_info = (-1, "")
+            print("It is to be regretted that all user is dead.")
 
     def __run_all_decisions(self):
         has_attack = False
@@ -84,7 +93,8 @@ class Game:
                 continue
             role, user = self.__players[player_id]
             action = user.decision(role.copy(), [player[0].copy() for player in self.__players if player[0] != role])
-            print("player {}: action {}, power {}".format(user.get_user_name(), action.action_type, action.power))
+            print("round {} > player '{}': action {}, power {}".format(
+                self.get_game_round(), user.get_user_name(), action.action_type, action.power))
             self.__now_players_action.append(action)
 
             if action.action_type.value == ActionType.ATTACK.value:
@@ -95,6 +105,8 @@ class Game:
 
     def _rule_defend_attack(self, this_defend_power, max_attack_power, player_id):
         if max_attack_power > self._rule_defend_attack_power(this_defend_power):
+            print("round {} > player '{}' can't defend attack power and be attacked".format(
+                self.get_game_round(), self.__players[player_id][1].get_user_name()))
             self.__players[player_id][0].be_attacked()
 
     @staticmethod
@@ -103,13 +115,22 @@ class Game:
 
     def _rule_attack_crash(self, this_attack_power, max_attack_power, player_id):
         if this_attack_power < max_attack_power:
+            print("round {} > player '{}' attack power is less than other's and be attacked".format(
+                self.get_game_round(), self.__players[player_id][1].get_user_name()))
             self.__players[player_id][0].be_attacked()
 
     def _rule_use_power(self, use_power, player_id):
         if not self.__players[player_id][0].use_power(use_power):
+            print("round {} > player '{}' want to use power {} but only has power {}, be attacked".format(
+                self.get_game_round(),
+                self.__players[player_id][1].get_user_name(),
+                use_power,
+                self.__players[player_id][0].power))
             self.__players[player_id][0].be_attacked()
 
     def _rule_be_attacked(self, make_power_num, max_attack_power, player_id):
+        print("round {} > player '{}' be attacked when make power".format(
+            self.get_game_round(), self.__players[player_id][1].get_user_name()))
         self.__players[player_id][0].be_attacked()
 
     def _rule_make_power(self, action, player_id):

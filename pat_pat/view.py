@@ -17,6 +17,11 @@ class GameView:
         self.__load_pics_path()
         self.__load_pics()
         self.__load_players_names()
+        self.__roles_pos = None
+        self.__attacks_move_pos = []
+        self.__one_round_min_time = 30
+        self.__this_round_time = 0
+        self.__round_fond = pygame.font.SysFont("simhei", 30)
 
     def __load_players_names(self):
         font = pygame.font.SysFont("simhei", 18)
@@ -37,13 +42,14 @@ class GameView:
         tar_role_h = int(self.__screen_size[1] * (1 / 4 + role_size_for_num(role_num)))
         for pic_id in range(len(self.__role)):
             pic_size = self.__role[pic_id].get_size()
+            tar_role_w = int(pic_size[0] / pic_size[1] * tar_role_h)
             self.__role[pic_id] = pygame.transform.smoothscale(
-                self.__role[pic_id], (int(pic_size[0] / pic_size[1] * tar_role_h), tar_role_h))
+                self.__role[pic_id], (tar_role_w, tar_role_h))
             self.__role_g[pic_id] = pygame.transform.smoothscale(
-                self.__role_g[pic_id], (int(pic_size[0] / pic_size[1] * tar_role_h), tar_role_h))
+                self.__role_g[pic_id], (tar_role_w, tar_role_h))
 
         self.__attack_pos = 0
-        self.__attack = [pygame.image.load(attack).convert_alpha() for attack in self.__attack_pics[0]]
+        self.__attack = [pygame.image.load(attack).convert_alpha() for attack in self.__attack_pics[1]]
 
         self.__defend_pos = 0
         tar_defend_h = int(tar_role_h * (3 / 5))
@@ -55,6 +61,12 @@ class GameView:
 
         self.__make_power_pos = 0
         self.__make_power = [pygame.image.load(mp).convert_alpha() for mp in self.__make_power_pics[0]]
+        role_size = self.__role[0].get_size()
+        tar_make_power_w = int(role_size[0] * 1.4)
+        for pic_id in range(len(self.__make_power)):
+            pic_size = self.__make_power[pic_id].get_size()
+            self.__make_power[pic_id] = pygame.transform.smoothscale(
+                self.__make_power[pic_id], (tar_make_power_w, int(pic_size[1] / pic_size[0] * tar_make_power_w)))
 
     def __load_pics_path(self):
         pic_p = "../pic/pat_pat/"
@@ -94,14 +106,38 @@ class GameView:
             [pic_p + "make_power/p1.png", pic_p + "make_power/p2.png"],
             [pic_p + "make_power/p3.png", pic_p + "make_power/p5.png", pic_p + "make_power/p4.png"]]
 
-    def draw(self):
+    def draw_start(self):
         self._draw_background()
-        roles_pos = self._draw_all_roles()
-        self._draw_all_defends(roles_pos)
-        self._draw_all_make_powers(roles_pos, 2)
+        self.__roles_pos = self._draw_all_roles()
+        self.__add_one_round_all_attack(self.__roles_pos)
+
+    def draw_base(self):
+        self._draw_background()
+        self.__roles_pos = self._draw_all_roles()
+
+    def draw_one_round(self):
+        """返回 False 表示该回合动画未完成"""
+        if self.__roles_pos is not None:
+            self._draw_all_defends(self.__roles_pos)
+            self._draw_all_make_powers(self.__roles_pos, 2)
+            draw_attack_finished = self._draw_one_round_all_attack()
+            if draw_attack_finished and self.__this_round_time > self.__one_round_min_time:
+                self.__this_round_time = 0
+                self.__attacks_move_pos.clear()
+                return True
+            else:
+                self.__this_round_time += 1
+                return False
+        else:
+            return True
 
     def _draw_background(self, frequency=1):
+        round_num_pic = \
+            self.__round_fond.render("Round {}".format(self.__game.get_game_round()), True, (255, 255, 255))
         self.__screen.blit(self.__background[self.__background_pos // frequency % len(self.__background)], (0, 0))
+        self.__screen.blit(
+            round_num_pic,
+            (self.__screen.get_width() / 2 - round_num_pic.get_width() / 2, self.__screen.get_height() / 10))
         self.__background_pos += 1
 
     def _draw_all_roles(self, frequency=1):
@@ -157,8 +193,41 @@ class GameView:
                     self._draw_make_power(player_id, self.__make_power, roles_position, frequency)
         self.__make_power_pos += 1
 
-    def _draw_attack(self):
-        pass
+    def __add_one_round_attack(self, attack_pics: list[Surface], from_role_id: int, to_role_id: int,
+                               roles_position: list, use_time: int):
+        attack_move_vec = pygame.Vector2((roles_position[to_role_id][0][0] - roles_position[from_role_id][0][0],
+                                          roles_position[to_role_id][0][1] - roles_position[from_role_id][0][1]))
+        attack_start_to_vec = pygame.Vector2(1, 0)
+        turn_angle = attack_start_to_vec.angle_to(attack_move_vec)
+        attack_pics = [pygame.transform.rotate(attack_pic, -turn_angle) for attack_pic in attack_pics]
+
+        attack_vec_len = attack_move_vec.length()
+        attack_move_vec = attack_move_vec * ((attack_vec_len - attack_pics[0].get_width()) / attack_vec_len)
+
+        move_speed = attack_move_vec / use_time
+        move_pos = [tuple(roles_position[from_role_id][0] + i * move_speed) for i in range(use_time + 1)]
+        self.__attacks_move_pos.append((move_pos, attack_pics))
+
+    def __add_one_round_all_attack(self, roles_position: list):
+        actions = self.__game.get_now_action()
+        for player_id in range(len(actions)):
+            if actions[player_id] is not None:
+                if actions[player_id].action_type.value == ActionType.ATTACK.value:
+                    for other in range(len(actions)):
+                        if other != player_id and actions[other] is not None:
+                            self.__add_one_round_attack(self.__attack, player_id, other, roles_position,
+                                                        self.__one_round_min_time)
+
+    def _draw_one_round_all_attack(self, frequency=1):
+        is_finished = True
+        for move_pos, attack_pics in self.__attacks_move_pos:
+            attack_pic = attack_pics[self.__attack_pos // frequency % len(attack_pics)]
+            if len(move_pos) > 0:
+                pos = move_pos.pop(0)
+                self.__screen.blit(attack_pic, (pos[0] - attack_pic.get_width(), pos[1] - attack_pic.get_height() / 2))
+                is_finished = False
+        self.__attack_pos += 1
+        return is_finished
 
     def _draw_defend(self, role_id: int, defend_pics, roles_position: list, frequency=1):
         role_pos = roles_position[role_id]
@@ -193,20 +262,30 @@ class View:
         self.clock = pygame.time.Clock()
 
         self.game = game
-        self.game.run_one_round()
 
         self.game_view = GameView(self.screen, self.game)
 
-    def run(self):
+    def run_one_round(self):
+        self.game_view.draw_start()
+        pygame.display.update()
+
         while True:
             self.clock.tick(30)
             for user_event in pygame.event.get():
                 if user_event.type == pygame.QUIT:
-                    return
-            self.game_view.draw()
+                    return False
+            self.game_view.draw_base()
+            is_round_finished = self.game_view.draw_one_round()
             pygame.display.update()
+            if is_round_finished:
+                return True
 
-
-if __name__ == '__main__':
-    view = View(Game(TestUser(), TestUser()))
-    view.run()
+    def run_wait(self):
+        while True:
+            self.clock.tick(30)
+            for user_event in pygame.event.get():
+                if user_event.type == pygame.QUIT:
+                    return False
+                # 玩家发送策略产生信号
+            self.game_view.draw_base()
+            pygame.display.update()
