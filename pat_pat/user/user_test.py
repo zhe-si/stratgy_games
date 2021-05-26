@@ -1,5 +1,7 @@
 import random
 
+from pygame import Surface
+
 from pat_pat.role import Role, Action, ActionType
 from pat_pat.user.interface import UserInterface
 
@@ -13,7 +15,7 @@ class TestUser(UserInterface):
         self.now_power = 0
         TestUser.user_id += 1
 
-    def decision(self, my_role: Role, enemies_role: list[Role]) -> Action:
+    def decision(self, my_role: Role, enemies_role: list[tuple[str, Role]]) -> Action:
         self.game_time += 1
         if self.game_time == 1:
             return Action(ActionType.MAKE_POWER, 1)
@@ -35,3 +37,6 @@ class TestUser(UserInterface):
 
     def get_user_name(self) -> str:
         return "TestUser {}".format(self.id)
+
+    def get_role_id(self, roles_pics: list[list[Surface]]) -> int:
+        return self.id % len(roles_pics)

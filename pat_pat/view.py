@@ -35,44 +35,47 @@ class GameView:
 
         role_num = self.__game.get_players_num()
         self.__role_pos = 0
-        self.__role = [pygame.image.load(role).convert_alpha() for role in self.__roles_pics[0]]
-        self.__role_g = [pygame.image.load(role[:-4] + "_g.png").convert_alpha() for role in self.__roles_pics[0]]
+        self.__roles = [[pygame.image.load(role).convert_alpha() for role in self.__roles_pics[i]]
+                        for i in range(len(self.__roles_pics))]
+        self.__roles_g = [[pygame.image.load(role[:-4] + "_g.png").convert_alpha() for role in self.__roles_pics[i]]
+                          for i in range(len(self.__roles_pics))]
         role_size_for_num = lambda n: (1 / n - 1 / 3) / 2
         tar_role_h = int(self.__screen_size[1] * (1 / 4 + role_size_for_num(role_num)))
-        for pic_id in range(len(self.__role)):
-            pic_size = self.__role[pic_id].get_size()
-            tar_role_w = int(pic_size[0] / pic_size[1] * tar_role_h)
-            self.__role[pic_id] = pygame.transform.smoothscale(
-                self.__role[pic_id], (tar_role_w, tar_role_h))
-            self.__role_g[pic_id] = pygame.transform.smoothscale(
-                self.__role_g[pic_id], (tar_role_w, tar_role_h))
+        for role_pics, role_g_pics in zip(self.__roles, self.__roles_g):
+            self.__resize_pics_by_h(role_pics, tar_role_h)
+            self.__resize_pics_by_h(role_g_pics, tar_role_h)
 
         self.__attack_pos = 0
         self.__attack = [pygame.image.load(attack).convert_alpha() for attack in self.__attack_pics[1]]
         tar_attack_h = int(tar_role_h / 3)
-        for pic_id in range(len(self.__attack)):
-            pic_size = self.__attack[pic_id].get_size()
-            self.__attack[pic_id] = pygame.transform.smoothscale(
-                self.__attack[pic_id], (int(pic_size[0] / pic_size[1] * tar_attack_h), tar_attack_h))
+        self.__resize_pics_by_h(self.__attack, tar_attack_h)
 
         self.__defend_pos = 0
         tar_defend_h = int(tar_role_h * (3 / 5))
         self.__defends = [[pygame.image.load(defend).convert_alpha() for defend in self.__defend_pics[i]]
                           for i in range(len(self.__defend_pics))]
         for defend_pic in self.__defends:
-            for pic_id in range(len(defend_pic)):
-                pic_size = defend_pic[pic_id].get_size()
-                defend_pic[pic_id] = pygame.transform.smoothscale(
-                    defend_pic[pic_id], (int(pic_size[0] / pic_size[1] * tar_defend_h), tar_defend_h))
+            self.__resize_pics_by_h(defend_pic, tar_defend_h)
 
         self.__make_power_pos = 0
         self.__make_power = [pygame.image.load(mp).convert_alpha() for mp in self.__make_power_pics[0]]
-        role_size = self.__role[0].get_size()
+        role_size = self.__roles[0][0].get_size()
         tar_make_power_w = int(role_size[0] * 1.4)
-        for pic_id in range(len(self.__make_power)):
-            pic_size = self.__make_power[pic_id].get_size()
-            self.__make_power[pic_id] = pygame.transform.smoothscale(
-                self.__make_power[pic_id], (tar_make_power_w, int(pic_size[1] / pic_size[0] * tar_make_power_w)))
+        self.__resize_pics_by_w(self.__make_power, tar_make_power_w)
+
+    @staticmethod
+    def __resize_pics_by_h(pics, tar_h):
+        for pic_id in range(len(pics)):
+            pic_size = pics[pic_id].get_size()
+            tar_w = int(pic_size[0] / pic_size[1] * tar_h)
+            pics[pic_id] = pygame.transform.smoothscale(pics[pic_id], (tar_w, tar_h))
+
+    @staticmethod
+    def __resize_pics_by_w(pics, tar_w):
+        for pic_id in range(len(pics)):
+            pic_size = pics[pic_id].get_size()
+            tar_h = int(pic_size[1] / pic_size[0] * tar_w)
+            pics[pic_id] = pygame.transform.smoothscale(pics[pic_id], (tar_w, tar_h))
 
     def __load_pics_path(self):
         pic_p = "../pic/pat_pat/"
@@ -145,6 +148,7 @@ class GameView:
     def _draw_all_roles(self, frequency=1):
         roles_num = self.__game.get_players_num()
         is_survivals = self.__game.get_players_survival_state()
+        players_role_id = self.__game.get_player_role(self.__roles)
 
         mid_point = (self.__screen_size[0] / 2, self.__screen_size[1] * (3 / 4 - 0.1))
         a = self.__screen_size[0] * (1 / 2 - 0.1)
@@ -166,9 +170,11 @@ class GameView:
         for role_id in range(roles_num):
             m_p = roles_point[role_id]
             if is_survivals[role_id]:
-                _, role_size = self._draw_role(m_p, self.__role, self.__players_names[role_id], frequency)
+                _, role_size = self._draw_role(
+                    m_p, self.__roles[players_role_id[role_id]], self.__players_names[role_id], frequency)
             else:
-                _, role_size = self._draw_role(m_p, self.__role_g, self.__players_names[role_id], frequency)
+                _, role_size = self._draw_role(
+                    m_p, self.__roles_g[players_role_id[role_id]], self.__players_names[role_id], frequency)
             roles_position.append((m_p, role_size))
         self.__role_pos += 1
         return roles_position

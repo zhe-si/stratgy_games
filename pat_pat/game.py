@@ -1,3 +1,5 @@
+from pygame import Surface
+
 from exception import LogicException
 from pat_pat.user.interface import UserInterface
 from role import Role, ActionType, Action
@@ -20,6 +22,9 @@ class Game:
 
     def get_game_round(self):
         return self.__round_num
+
+    def get_player_role(self, roles_pics: list[list[Surface]]):
+        return [player[1].get_role_id(roles_pics) for player in self.__players]
 
     def get_players_num(self):
         return len(self.__players)
@@ -92,7 +97,9 @@ class Game:
                 self.__now_players_action.append(None)
                 continue
             role, user = self.__players[player_id]
-            action = user.decision(role.copy(), [player[0].copy() for player in self.__players if player[0] != role])
+            action = user.decision(
+                role.copy(),
+                [(player[1].get_user_name(), player[0].copy()) for player in self.__players if player[0] != role])
             print("round {} > player '{}': action {}, power {}".format(
                 self.get_game_round(), user.get_user_name(), action.action_type, action.power))
             self.__now_players_action.append(action)
