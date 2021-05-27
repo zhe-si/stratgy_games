@@ -23,7 +23,7 @@ class Game:
     def get_game_round(self):
         return self.__round_num
 
-    def get_player_role(self, roles_pics: list[list[Surface]]):
+    def get_players_role_id(self, roles_pics: list[list[Surface]]):
         return [player[1].get_role_id(roles_pics) for player in self.__players]
 
     def get_players_num(self):

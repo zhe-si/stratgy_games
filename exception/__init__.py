@@ -4,3 +4,7 @@ class NoneException(Exception):
 
 class LogicException(Exception):
     pass
+
+
+class InputException(Exception):
+    pass

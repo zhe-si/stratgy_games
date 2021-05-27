@@ -7,6 +7,8 @@ from pygame.surface import Surface
 from pat_pat.game import Game
 from pat_pat.role import ActionType
 
+pygame.init()
+
 
 class GameView:
     def __init__(self, screen: Surface, game: Game):
@@ -148,7 +150,7 @@ class GameView:
     def _draw_all_roles(self, frequency=1):
         roles_num = self.__game.get_players_num()
         is_survivals = self.__game.get_players_survival_state()
-        players_role_id = self.__game.get_player_role(self.__roles)
+        players_role_id = self.__game.get_players_role_id(self.__roles)
 
         mid_point = (self.__screen_size[0] / 2, self.__screen_size[1] * (3 / 4 - 0.1))
         a = self.__screen_size[0] * (1 / 2 - 0.1)
@@ -288,8 +290,6 @@ class GameView:
 
 class View:
     def __init__(self, game: Game):
-        pygame.init()
-
         self.screen_size = (1200, 700)
         self.screen = pygame.display.set_mode(self.screen_size)
         pygame.display.set_caption("pat pat")
