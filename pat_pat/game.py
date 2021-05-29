@@ -100,6 +100,7 @@ class Game:
             action = user.decision(
                 role.copy(),
                 [(player[1].get_user_name(), player[0].copy()) for player in self.__players if player[0] != role])
+            role.add_history(action)
             print("round {} > player '{}': action {}, power {}".format(
                 self.get_game_round(), user.get_user_name(), action.action_type, action.power))
             self.__now_players_action.append(action)
