@@ -1,10 +1,12 @@
 from pat_pat.game import Game
+from pat_pat.user.remote_user import ReceiveUserProxy
 from pat_pat.user.test_user import TestUser
 from pat_pat.view import View
 
 
 def main():
-    game = Game(TestUser(), TestUser(), TestUser(), TestUser(), TestUser())
+    r_p = ReceiveUserProxy.wait_connect()
+    game = Game(TestUser(), TestUser(), TestUser(), TestUser(), r_p)
     # game = Game(TestUser(), RealTimeCMDControlUser())
     view = View(game)
     while True:

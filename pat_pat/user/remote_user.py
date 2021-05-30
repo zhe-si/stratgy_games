@@ -153,14 +153,3 @@ class ReceiveUserProxy(UserInterface):
         return_data = receive_all(self.__connect, return_data_length)
         return_object = pickle.loads(return_data)
         return return_object
-
-
-def main():
-    role1 = Role(2, 4)
-    role2 = Role(1, 3)
-    r_p = ReceiveUserProxy.wait_connect()
-    print(r_p.decision(role1, [("1", role2)]))
-
-
-if __name__ == '__main__':
-    main()

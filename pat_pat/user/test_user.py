@@ -4,7 +4,6 @@ from pygame import Surface
 
 from pat_pat.role import Role, Action, ActionType
 from pat_pat.user.interface import UserInterface
-from pat_pat.user.remote_user import SendUserProxy, ReceiveUserProxy
 
 
 class TestUser(UserInterface):
@@ -41,8 +40,3 @@ class TestUser(UserInterface):
 
     def get_role_id(self, roles_pics: list[list[Surface]]) -> int:
         return self.id % len(roles_pics)
-
-
-if __name__ == '__main__':
-    s_p = SendUserProxy(TestUser(), "localhost", ReceiveUserProxy.BIND_PORT)
-    s_p.run()
